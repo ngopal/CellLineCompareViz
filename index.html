@@ -1,0 +1,94 @@
+<html>
+<head>
+<script type="text/javascript" src="node_modules/d3/d3.min.js"></script>
+</head>
+<script type="text/javascript">
+
+function distance(x, y) {
+	return Math.pow(x - y, 2);
+}
+
+function winner(x,y) {
+	if (x < y) {
+		return "afs";
+	}
+	else if (x > y) {
+		return "msc";
+	}
+	else {
+		return "tie";
+	}
+}
+
+var genes_of_interest = ["OCT4",
+						 "SOX2",
+						 "NANOG",
+						 "MESP",
+						 "ISL1",
+						 "NKX2.5",
+						 "BRACHYURY",
+						 "SP4",
+						 "GATA4",
+						 "HOXB5"];
+
+d3.csv("http://localhost:8000/data/ES-only.csv", function(row) {
+	var gene_scales = [];
+	var gene_color_scale = [];
+	var max_gene = 0;
+	var min_gene = 0;
+	row.forEach(function(element) {
+		var mean_afs = (parseInt(element["X1_F532.Median...B532"])+parseInt(element["X2_F532.Median...B532"])/2);
+		var mean_es = (parseInt(element["X3_F532.Median...B532"])+parseInt(element["X4_F532.Median...B532"])/2);
+		var mean_msc = (parseInt(element["X5_F532.Median...B532"])+parseInt(element["X6_F532.Median...B532"])/2);
+		var gene_name = element.AceView;
+		var gene_id = element.GeneID;
+
+		//update max and min gene values
+		if (max_gene < d3.max([mean_es,mean_afs,mean_msc])) {
+			max_gene = d3.max([mean_es,mean_afs,mean_msc]);
+		}
+		if (min_gene > d3.min([mean_es,mean_afs,mean_msc])) {
+			min_gene = d3.min([mean_es,mean_afs,mean_msc]);
+		}
+
+		// set gene-specific color scale
+		var gcs = d3.scale.linear()
+				.domain([mean_afs,mean_es,mean_msc].sort())
+				.range(["blue","white","red"]);
+		gene_color_scale.push(gcs);
+
+		gene_scales.push({gene:gene_name, 
+			         geneid:gene_id, 
+			         afs:mean_afs, 
+			         es:mean_es, 
+			         msc:mean_msc
+			     });
+	});
+
+    console.log(gene_scales);
+
+	//set scale
+	var scale = d3.scale.linear()
+		.domain([min_gene, max_gene])
+		.range([0,1])
+
+	var svg = d3.select("body")
+			.append("svg")
+			.attr("height", 500)
+			.attr("width", 500);
+
+	var relevant = gene_scales.filter(function(item) {
+		console.log(item.gene.toUpperCase());
+		return genes_of_interest.indexOf(item.gene.toUpperCase()) !== -1;
+	});
+
+	console.log(relevant);
+
+
+});
+
+</script>
+<body>
+	
+</body>
+</html>
